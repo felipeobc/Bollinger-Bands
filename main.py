@@ -1,19 +1,16 @@
 from openpyxl import Workbook
-import datetime
 
-wb = Workbook()
+#acao = input("QUal o codigo da Ação que você quer processar: ").upper()
 
-# grab the active worksheet
-ws = wb.active
+acao = "BIDI4"
 
-# Data can be assigned directly to cells
-ws['A1'] = 42
+with open(f'./dados/{acao}.txt', 'r') as arquivo_cotacao:
+    linhas = arquivo_cotacao.readline()
+    linhas = [linha.replace("\n", "").strip(";") for linha in linhas]
 
-# Rows can also be appended
-ws.append([1, 2, 3])
 
-# Python types will automatically be converted
-ws['A2'] = datetime.datetime.now()
+workbook = Workbook()
+planilha_ativa = workbook.active
+planilha_ativa.title = "Dados"
 
-# Save the file
-wb.save("sample.xlsx")
+workbook.save("./saida/Planilha.xlsx")
