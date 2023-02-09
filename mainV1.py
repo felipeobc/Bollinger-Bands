@@ -4,22 +4,25 @@ from openpyxl.chart import LineChart, Reference
 from openpyxl.drawing.image import Image
 from openpyxl.styles import PatternFill, Font, Alignment
 
+from classes import LeitorAcoes, GerenciadorPlanilha
+
 # acao = input("QUal o codigo da Ação que você quer processar: ").upper()
 
 acao = "BIDI4"
 
-with open(f'./dados/{acao}.txt', 'r') as arquivo_cotacao:
-    linhas = arquivo_cotacao.readlines()
-    linhas = [linha.replace("\n", "").split(";") for linha in linhas]
+leitor_acoes = LeitorAcoes(caminho_arquivo='./dados/')
+leitor_acoes.processa_arquivo(acao)
 
-workbook = Workbook()
-planilha_ativa = workbook.active
-planilha_ativa.title = "Dados"
 
-planilha_ativa.append(["DATA", "COTAÇÂO", "BANDA INFERIOR", "BANDA SUPERIOR"])
+gerenciador = GerenciadorPlanilha()
+
+planilha_dados = gerenciador.adiciona_planilha(titulo_planilha="Dados")
+
+gerenciador.adiciona_linas(["DATA", "COTAÇÂO", "BANDA INFERIOR", "BANDA SUPERIOR"])
+
 indice = 2
 
-for linha in linhas:
+for linha in leitor_acoes.dados:
     # DATA
     # 2018-05-10 21:00:00;0.9969
     ano_mes_dia = linha[0].split(" ")[0]
@@ -32,23 +35,22 @@ for linha in linhas:
     cotacao = float(linha[1])
 
     # Atualiza celulas
-    planilha_ativa[f'A{indice}'] = data
-    planilha_ativa[f'B{indice}'] = cotacao
-    # BANDA INFERIOR
-    planilha_ativa[f'C{indice}'] = f'AVERANGE(B{indice}:B{indice + 19}) - 2*STDEV(B{indice}:B{indice + 19})'
-    # BANDA SUPERIOR
-    planilha_ativa[f'D{indice}'] = f'AVERANGE(B{indice}:B{indice + 19}) + 2*STDEV(B{indice}:B{indice + 19})'
+    formula_bb_inferior = f'AVERANGE(B{indice}:B{indice + 19}) - 2*STDEV(B{indice}:B{indice + 19})'
+    formula_bb_superior = f'AVERANGE(B{indice}:B{indice + 19}) + 2*STDEV(B{indice}:B{indice + 19})'
+    gerenciador.atualiza_celula(celula=f'A{indice}', dado=data)
+    gerenciador.atualiza_celula(celula=f'B{indice}', dado=cotacao)
+    gerenciador.atualiza_celula(celula=f'C{indice}', dado=formula_bb_inferior)
+    gerenciador.atualiza_celula(celula=f'D{indice}', dado=formula_bb_superior)
 
     indice += 1
 
-planilha_grafico = workbook.create_sheet("Grafico")
 
-workbook.active = planilha_grafico
 
-# Configuração de  planilha
-planilha_grafico.merge_cells("A1:T2")
-cabecalho = planilha_grafico['A1']
-cabecalho.font = Font(b=True, sz=18, color="FFFFFF")
+
+gerenciador.adiciona_planilha(titulo_planilha='Grafico')
+gerenciador.mescla_celula(celula_inicio='A1', celula_fim='T2')
+gerenciador.estiliza_fonte('A1', Font(b=True, sz=18, color="FFFFFF"))
+
 cabecalho.fill = PatternFill("solid", fgColor="07838F")
 cabecalho.alignment = Alignment(vertical="center", horizontal="center")
 cabecalho.value = "Historico de Cotação"
